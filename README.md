@@ -1,5 +1,16 @@
 # Xircuits PyCaret Components Library
 
+## Requirements
+
+PyCaret is tested and supported on the following 64-bit systems:
+- Python 3.6 – 3.8
+- Python 3.9 for Ubuntu only
+- Ubuntu 16.04 or later
+- Windows 7 or later
+
+Ensure you have the right Python version before installing.
+
+--- 
 
 This library consists of PyCaret components that allow to implements of the different AutoML tasks in Xircuits:
 
