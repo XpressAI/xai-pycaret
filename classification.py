@@ -1,60 +1,62 @@
 from xai_components.base import InArg, OutArg, Component, xai_component
 from IPython.utils import capture
 
-
-
-"""
-This component initializes the training environment and creates the transformation pipeline.
-Setup component must be called before executing any other component. It takes two mandatory 
-parameters:data and target. All the other parameters are optional.
-"""
 @xai_component(color="blue")
 class SetupClassification(Component):
-    in_dataset: InArg[any] #Shape (n_samples, n_features), where n_samples is the number of samples and n_features is the number of features
-    target: InArg[str] #Name of the target column to be passed in as a string. The target variable can be either binary or multiclass.
-    train_size_fraction : InArg[float] #Proportion of the dataset to be used for training and validation. Should be between 0.0 and 1.0.
-    normalize:InArg[bool] #When set to True, it transforms the numeric features by scaling them to a given range. 
-    transformation:InArg[bool] #When set to True, it applies the power transform to make data more Gaussian-like.
-    ignore_low_variance:InArg[bool] #When set to True, all categorical features with insignificant variances are removed from the data. 
-    remove_multicollinearity:InArg[bool] #When set to True, features with the inter-correlations higher than the defined threshold are removed.
-    multicollinearity_threshold:InArg[float] #Threshold for correlated features. Ignored when remove_multicollinearity is not True.
-    bin_numeric_features:InArg[any] #To convert numeric features into categorical,It takes a list of strings with column names that are related.
-    group_features:InArg[any] #When the dataset contains features with related characteristics, group_features parameter can be used for feature extraction. It takes a list of strings with column names that are related.
-    ignore_features:InArg[list] #ignore_features param can be used to ignore features during model training. It takes a list of strings with column names that are to be ignored.
-    seed : InArg[int] #You can use random_state for reproducibility.
-    log_experiment:InArg[bool] #logging setup and training
-    experiment_name:InArg[str] #Name of the experiment for logging.
-    use_gpu:InArg[bool]
+    """
+    Initializes the training environment and creates the transformation pipeline.
+    Setup must be called before executing any other component.
+
+    ##### inPorts:
+    - in_dataset (any): Shape (n_samples, n_features), where n_samples is the number of samples and n_features is the number of features.
+    - target (str): Name of the target column to be passed in as a string. The target variable can be either binary or multiclass.
+    - train_size_fraction (float): Proportion of the dataset to be used for training and validation. Should be between 0.0 and 1.0.
+    - normalize (bool): When set to True, it transforms the numeric features by scaling them to a given range.
+    - transformation (bool): When set to True, it applies the power transform to make data more Gaussian-like.
+    - remove_multicollinearity (bool): When set to True, features with inter-correlations higher than the defined threshold are removed.
+    - multicollinearity_threshold (float): Threshold for correlated features. Ignored when remove_multicollinearity is not True.
+    - bin_numeric_features (any): To convert numeric features into categorical. It takes a list of strings with column names that are related.
+    - group_features (any): When the dataset contains features with related characteristics, group_features parameter can be used for feature extraction. It takes a list of strings with column names that are related.
+    - ignore_features (list): Ignore_features param can be used to ignore features during model training. It takes a list of strings with column names that are to be ignored.
+    - seed (int): You can use random_state for reproducibility.
+    - log_experiment (bool): Logging setup and training.
+    - experiment_name (str): Name of the experiment for logging.
+    - use_gpu (bool): Whether to use GPU for training.
+    """
+    in_dataset: InArg[any]
+    target: InArg[str]
+    train_size_fraction: InArg[float]
+    normalize: InArg[bool]
+    transformation: InArg[bool]
+    remove_multicollinearity: InArg[bool]
+    multicollinearity_threshold: InArg[float]
+    bin_numeric_features: InArg[any]
+    group_features: InArg[any]
+    ignore_features: InArg[list]
+    seed: InArg[int]
+    log_experiment: InArg[bool]
+    experiment_name: InArg[str]
+    use_gpu: InArg[bool]
 
     def __init__(self):
-
-        self.done = False
-        self.in_dataset = InArg(None)
-        self.target = InArg('default')
-        self.train_size_fraction = InArg(1.0)
-        self.normalize = InArg(False)
-        self.transformation = InArg(False)
-        self.ignore_low_variance = InArg(False)
-        self.remove_multicollinearity = InArg(False)
-        self.multicollinearity_threshold = InArg(0.9)
-        self.bin_numeric_features = InArg(None)
-        self.group_features = InArg(None)
-        self.ignore_features = InArg(None) 
-        self.seed = InArg(None)
-        self.log_experiment = InArg(False)
-        self.experiment_name = InArg('default')
-        self.use_gpu = InArg(False)
+        super().__init__()
+        self.target.value = 'default'
+        self.train_size_fraction.value = 1.0
+        self.normalize.value = False
+        self.transformation.value = False
+        self.remove_multicollinearity.value = False
+        self.multicollinearity_threshold.value = 0.9
+        self.experiment_name.value = 'default'
+        self.use_gpu.value = False
 
     def execute(self, ctx) -> None:
-
-        from pycaret.classification import setup , models
+        from pycaret.classification import setup, models
 
         in_dataset = self.in_dataset.value
         target = self.target.value
         train_size_fraction = self.train_size_fraction.value
         normalize = self.normalize.value
         transformation = self.transformation.value
-        ignore_low_variance = self.ignore_low_variance.value
         remove_multicollinearity = self.remove_multicollinearity.value
         multicollinearity_threshold = self.multicollinearity_threshold.value
         bin_numeric_features = self.bin_numeric_features.value
@@ -69,138 +71,133 @@ class SetupClassification(Component):
             print("Set the seed value for reproducibility.")
             
         with capture.capture_output() as captured:
-            setup_pycaret = setup(data = in_dataset,
-             target = target,
-             train_size=train_size_fraction,
-             normalize =normalize,
-             transformation = transformation,
-             ignore_low_variance = ignore_low_variance,
-             remove_multicollinearity = remove_multicollinearity,
-             multicollinearity_threshold = multicollinearity_threshold,
-             bin_numeric_features = bin_numeric_features,
-             group_features = group_features,
-             ignore_features = ignore_features,
-             session_id=seed,
-             log_experiment = log_experiment,
-             experiment_name = experiment_name,
-             use_gpu = use_gpu,
-             silent=True)
+            setup_pycaret = setup(data=in_dataset,
+                                  target=target,
+                                  train_size=train_size_fraction,
+                                  normalize=normalize,
+                                  transformation=transformation,
+                                  remove_multicollinearity=remove_multicollinearity,
+                                  multicollinearity_threshold=multicollinearity_threshold,
+                                  bin_numeric_features=bin_numeric_features,
+                                  group_features=group_features,
+                                  ignore_features=ignore_features,
+                                  session_id=seed,
+                                  log_experiment=log_experiment,
+                                  experiment_name=experiment_name,
+                                  use_gpu=use_gpu)
 
         captured.show()
 
         print("List of the Available Classification Models: ")
         print(models())
-        
-        self.done = True
 
-'''
-This component trains and evaluates performance of all estimators available 
-in the model library using cross validation.The output of this component is 
-a score grid with average cross validated scores. 
-'''
 @xai_component(color="firebrick")
 class CompareModelsClassification(Component):
-    sort_by:InArg[str] #The sort order of the score grid. 
-    exclude:InArg[list] #To omit certain models from training and evaluation, pass a list containing model id in the exclude parameter.
-    num_top:InArg[int] #Number of top_n models to return.
+    """
+    Trains and evaluates performance of all estimators available in the model library using cross validation.
+    The output of this component is a score grid with average cross-validated scores.
 
-    top_models:OutArg[any]
+    ##### inPorts:
+    - sort_by (str): The sort order of the score grid.
+    - exclude (list): To omit certain models from training and evaluation, pass a list containing model id in the exclude parameter.
+    - num_top (int): Number of top_n models to return.
+    
+    ##### outPorts:
+    - top_models (any): List of top models.
+    """
+    sort_by: InArg[str]
+    exclude: InArg[list]
+    num_top: InArg[int]
+    top_models: OutArg[any]
 
     def __init__(self):
-
-        self.done = False
-        self.sort_by = InArg('Accuracy')
-        self.exclude = InArg(None)
-        self.num_top = InArg(1)
-
-        self.top_models = OutArg(None)
+        super().__init__()
+        self.sort_by.value = 'Accuracy'
+        self.num_top.value = 1
 
     def execute(self, ctx) -> None:
+        from pycaret.classification import compare_models
 
-        from pycaret.classification import compare_models 
-    
         sort_by = self.sort_by.value
         exclude = self.exclude.value
         num_top = self.num_top.value
 
         with capture.capture_output() as captured:
-            best_model = compare_models(sort=sort_by,exclude = exclude,n_select = num_top)
+            best_model = compare_models(sort=sort_by, exclude=exclude, n_select=num_top)
         captured.show()
-        print('Best '+str(num_top)+' Model:',best_model)
+        print('Best ' + str(num_top) + ' Model:', best_model)
 
         self.top_models.value = best_model
 
-        self.done = True
-
-'''
-This component trains and evaluates the performance of a given estimator 
-using cross validation.The output of this component is a score grid with 
-CV scores by fold.
-'''
 @xai_component(color="orange")
 class CreateModelClassification(Component):
-    model_id:InArg[str] #ID of an estimator available in model library or pass an untrained model object consistent with scikit-learn API
-    num_fold:InArg[int] #Controls cross-validation. If None, the CV generator in the fold_strategy parameter of the setup function is used.
+    """
+    Trains and evaluates the performance of a given estimator using cross validation.
+    The output of this component is a score grid with CV scores by fold.
 
-    out_created_model:OutArg[any] #Trained Model object
+    ##### inPorts:
+    - model_id (str): ID of an estimator available in the model library or pass an untrained model object consistent with scikit-learn API.
+    - num_fold (int): Controls cross-validation. If None, the CV generator in the fold_strategy parameter of the setup function is used.
+    
+    ##### outPorts:
+    - out_created_model (any): Trained Model object.
+    """
+    model_id: InArg[str]
+    num_fold: InArg[int]
+    out_created_model: OutArg[any]
 
     def __init__(self):
-
-        self.done = False
-        self.model_id = InArg('lr')
-        self.num_fold = InArg(10)
-
-        self.out_created_model= OutArg(None)
+        super().__init__()
+        self.model_id.value = 'lr'
+        self.num_fold.value = 10
 
     def execute(self, ctx) -> None:
+        from pycaret.classification import create_model
 
-        from pycaret.classification import create_model 
-    
         model_id = self.model_id.value
         num_fold = self.num_fold.value
 
         with capture.capture_output() as captured:
-            created_model = create_model(estimator = model_id, fold = num_fold)
+            created_model = create_model(estimator=model_id, fold=num_fold)
         captured.show()
         print(created_model)
 
         self.out_created_model.value = created_model
 
-        self.done = True
-
-
-'''
-This component tunes the hyperparameters of a given model. The output of this component is
-a score grid with CV scores by fold of the best selected model based on optimize parameter.
-'''
 @xai_component(color="salmon")
 class TuneModelClassification(Component):
-    in_model:InArg[any] #Trained model object
-    optimize:InArg[str] #Metric name to be evaluated for hyperparameter tuning.
-    early_stopping_patience:InArg[int] #Maximum number of epochs to run for each sampled configuration.
-    num_fold:InArg[int] #Controls cross-validation. If None, the CV generator in the fold_strategy parameter of the setup function is used.
-    n_iter:InArg[int] #Number of iterations in the grid search. Increasing ‘n_iter’ may improve model performance but also increases the training time.
-    custom_grid:InArg[any] #To define custom search space for hyperparameters, pass a dictionary with parameter name and values to be iterated.
+    """
+    Tunes the hyperparameters of a given model. The output of this component is
+    a score grid with CV scores by fold of the best selected model based on optimize parameter.
 
-    out_tuned_model:OutArg[any]
+    ##### inPorts:
+    - in_model (any): Trained model object.
+    - optimize (str): Metric name to be evaluated for hyperparameter tuning.
+    - early_stopping_patience (int): Maximum number of epochs to run for each sampled configuration.
+    - num_fold (int): Controls cross-validation. If None, the CV generator in the fold_strategy parameter of the setup function is used.
+    - n_iter (int): Number of iterations in the grid search. Increasing ‘n_iter’ may improve model performance but also increases the training time.
+    - custom_grid (any): To define custom search space for hyperparameters, pass a dictionary with parameter name and values to be iterated.
+    
+    ##### outPorts:
+    - out_tuned_model (any): Tuned model object.
+    """
+    in_model: InArg[any]
+    optimize: InArg[str]
+    early_stopping_patience: InArg[int]
+    num_fold: InArg[int]
+    n_iter: InArg[int]
+    custom_grid: InArg[any]
+    out_tuned_model: OutArg[any]
 
     def __init__(self):
-
-        self.done = False
-        self.in_model = InArg(None)
-        self.optimize = InArg("Accuracy")
-        self.early_stopping_patience = InArg(None)
-        self.num_fold = InArg(10)
-        self.n_iter = InArg(10)
-        self.custom_grid = InArg(None) 
-
-        self.out_tuned_model= OutArg(None)
+        super().__init__()
+        self.optimize.value = "Accuracy"
+        self.num_fold.value = 10
+        self.n_iter.value = 10
 
     def execute(self, ctx) -> None:
-
-        from pycaret.classification import tune_model 
+        from pycaret.classification import tune_model
         from IPython.display import display
-        import numpy as np
 
         in_model = self.in_model.value
         optimize = self.optimize.value
@@ -210,99 +207,92 @@ class TuneModelClassification(Component):
         custom_grid = self.custom_grid.value
 
         if patience is None:
-            early_stopping=False
+            early_stopping = False
             patience = 10
         else:
-            early_stopping=True
-            patience=patience
+            early_stopping = True
 
         with capture.capture_output() as captured:
-            tuned_model = tune_model(estimator = in_model,
-                                    optimize = optimize,
-                                    fold= num_fold,
-                                    n_iter=n_iter,
-                                    early_stopping=early_stopping,
-                                    early_stopping_max_iters=patience,
-                                    custom_grid = custom_grid)
+            tuned_model = tune_model(estimator=in_model,
+                                     optimize=optimize,
+                                     fold=num_fold,
+                                     n_iter=n_iter,
+                                     early_stopping=early_stopping,
+                                     early_stopping_max_iters=patience,
+                                     custom_grid=custom_grid)
         
         for o in captured.outputs:
             display(o)
 
         self.out_tuned_model.value = tuned_model
-        
-        self.done = True
 
-
-'''
-This component analyzes the performance of a trained model on holdout set. 
-It may require re-training the model in certain cases.
-'''
 @xai_component(color="springgreen")
 class PlotModelClassification(Component):
-    in_model:InArg[any] #Trained model object
-    plot_type:InArg[str] #plot name
-    list_available_plots:InArg[bool] # list the available plots
+    """
+    Analyzes the performance of a trained model on holdout set. It may require re-training the model in certain cases.
 
-    out_model:OutArg[any]
+    ##### inPorts:
+    - in_model (any): Trained model object.
+    - plot_type (str): Plot name.
+    - list_available_plots (bool): List the available plots.
+    
+    ##### outPorts:
+    - out_model (any): Trained model object.
+    """
+    in_model: InArg[any]
+    plot_type: InArg[str]
+    list_available_plots: InArg[bool]
+    out_model: OutArg[any]
 
     def __init__(self):
-
-        self.done = False
-        self.in_model = InArg(None)
-        self.plot_type = InArg('auc')
-        self.list_available_plots=InArg(False)
-
-        self.out_model= OutArg(None)
+        super().__init__()
+        self.plot_type.value = 'auc'
+        self.list_available_plots.value = False
 
     def execute(self, ctx) -> None:
+        from pycaret.classification import plot_model
 
-        from pycaret.classification import plot_model 
-
-        plot = {'auc' : 'Area Under the Curve','threshold' : 'Discrimination Threshold','pr' : 'Precision Recall Curve',
-            'confusion_matrix' : 'Confusion Matrix','error' : 'Class Prediction Error','class_report' : 'Classification Report',
-            'boundary' : 'Decision Boundary','rfe' : 'Recursive Feature Selection','learning' : 'Learning Curve',
-            'manifold' : 'Manifold Learning','calibration' : 'Calibration Curve','vc' : 'Validation Curve',
-            'dimension' : 'Dimension Learning','feature' : 'Feature Importance','feature_all' : 'Feature Importance (All)',
-            'parameter' : 'Model Hyperparameter','lift' : 'Lift Curve','gain' : 'Gain Chart','tree' : 'Decision Tree','ks' : 'KS Statistic Plot'}
+        plot = {
+            'auc': 'Area Under the Curve', 'threshold': 'Discrimination Threshold', 'pr': 'Precision Recall Curve',
+            'confusion_matrix': 'Confusion Matrix', 'error': 'Class Prediction Error', 'class_report': 'Classification Report',
+            'boundary': 'Decision Boundary', 'rfe': 'Recursive Feature Selection', 'learning': 'Learning Curve',
+            'manifold': 'Manifold Learning', 'calibration': 'Calibration Curve', 'vc': 'Validation Curve',
+            'dimension': 'Dimension Learning', 'feature': 'Feature Importance', 'feature_all': 'Feature Importance (All)',
+            'parameter': 'Model Hyperparameter', 'lift': 'Lift Curve', 'gain': 'Gain Chart', 'tree': 'Decision Tree', 'ks': 'KS Statistic Plot'
+        }
 
         in_model = self.in_model.value
         plot_type = self.plot_type.value
         list_available_plots = self.list_available_plots.value
 
         with capture.capture_output() as captured:
-            plot_model = plot_model(in_model, plot = plot_type)
+            plot_model(in_model, plot=plot_type)
         captured.show()
 
-        if list_available_plots is True:
+        if list_available_plots:
             print('List of available plots (plot Type - Plot Name):')
             for key, value in plot.items():
                 print(key, ' - ', value)
 
         self.out_model.value = in_model
-        
-        self.done = True
 
-
-'''
-This component trains a given estimator on the entire dataset including the holdout set.
-'''
 @xai_component(color='crimson')
 class FinalizeModelClassification(Component):
-    in_model:InArg[any] #Trained model object
+    """
+    Trains a given estimator on the entire dataset including the holdout set.
 
-    out_finalize_model:OutArg[any] ##Trained model object
-
-    def __init__(self):
-
-        self.done = False
-        self.in_model = InArg(None)
-        
-        self.out_finalize_model= OutArg(None)
+    ##### inPorts:
+    - in_model (any): Trained model object.
+    
+    ##### outPorts:
+    - out_finalize_model (any): Trained model object.
+    """
+    in_model: InArg[any]
+    out_finalize_model: OutArg[any]
 
     def execute(self, ctx) -> None:
+        from pycaret.classification import finalize_model
 
-        from pycaret.classification import finalize_model 
-    
         in_model = self.in_model.value
 
         with capture.capture_output() as captured:
@@ -311,131 +301,113 @@ class FinalizeModelClassification(Component):
         captured.show()
 
         self.out_finalize_model.value = out_finalize_model
-        
-        self.done = True
 
-'''
-This component predicts Label and Score (probability of predicted class) using a trained model.
- When data is None, it predicts label and score on the holdout set
-'''
 @xai_component(color='darkviolet')
 class PredictModelClassification(Component):
-    in_model:InArg[any] #Trained model object
-    predict_dataset:InArg[any] #Shape (n_samples, n_features). All features used during training must be available in the unseen dataset.
+    """
+    Predicts Label and Score (probability of predicted class) using a trained model.
+    When data is None, it predicts label and score on the holdout set.
 
-    out_model:OutArg[any] #pandas.DataFrame with prediction and score columns 
-
-    def __init__(self):
-
-        self.done = False
-        self.in_model = InArg(None)
-        self.predict_dataset = InArg(None)
-
-        self.out_model= OutArg(None)
+    ##### inPorts:
+    - in_model (any): Trained model object.
+    - predict_dataset (any): Shape (n_samples, n_features). All features used during training must be available in the unseen dataset.
+    
+    ##### outPorts:
+    - out_model (any): pandas.DataFrame with prediction and score columns.
+    """
+    in_model: InArg[any]
+    predict_dataset: InArg[any]
+    out_model: OutArg[any]
 
     def execute(self, ctx) -> None:
+        from pycaret.classification import predict_model
 
-        from pycaret.classification import predict_model 
-    
         in_model = self.in_model.value
         predict_dataset = self.predict_dataset.value
 
         with capture.capture_output() as captured:
-            Prediction = predict_model(in_model, data= predict_dataset)  
+            prediction = predict_model(in_model, data=predict_dataset)
         captured.show()
 
-        self.out_model.value = in_model
-        
-        self.done = True
+        self.out_model.value = prediction
 
-
-'''
-This component saves the transformation pipeline and trained model object into the
- current working directory as a pickle file for later use.
-'''
 @xai_component(color='red')
 class SaveModelClassification(Component):
-    in_model:InArg[any] #Trained model object
-    save_path:InArg[str] #Name and saving path of the model.
-    model_only:InArg[bool] #When set to True, only trained model object is saved instead of the entire pipeline.
+    """
+    Saves the transformation pipeline and trained model object into the current working directory as a pickle file for later use.
 
-    def __init__(self):
-
-        self.done = False
-        self.in_model = InArg(None)
-        self.save_path = InArg(None)
-        self.model_only = InArg(False)
+    ##### inPorts:
+    - in_model (any): Trained model object.
+    - save_path (str): Name and saving path of the model.
+    - model_only (bool): When set to True, only the trained model object is saved instead of the entire pipeline.
+    """
+    in_model: InArg[any]
+    save_path: InArg[str]
+    model_only: InArg[bool]
 
     def execute(self, ctx) -> None:
+        from pycaret.classification import save_model
 
-        from pycaret.classification import save_model 
-    
         in_model = self.in_model.value
         save_path = self.save_path.value
         model_only = self.model_only.value
 
-        save_model(in_model,model_name=save_path,model_only=model_only)
-        
-        self.done = True
+        save_model(in_model, model_name=save_path, model_only=model_only)
 
-
-'''
-This component loads a previously saved pipeline.
-'''
 @xai_component(color='red')
 class LoadModelClassification(Component):
-    model_path:InArg[str] #Name and path of the saved model
+    """
+    Loads a previously saved pipeline.
 
-    model:OutArg[any] #Trained model object
-
-    def __init__(self):
-
-        self.done = False
-        self.model_path = InArg(None)
-
-        self.model= OutArg(None)
-        
-    def execute(self, ctx) -> None:
-
-        from pycaret.classification import load_model 
+    ##### inPorts:
+    - model_path (str): Name and path of the saved model.
     
-        model_path = self.model_path.value
+    ##### outPorts:
+    - model (any): Trained model object.
+    """
+    model_path: InArg[str]
+    model: OutArg[any]
 
+    def execute(self, ctx) -> None:
+        from pycaret.classification import load_model
+
+        model_path = self.model_path.value
         loaded_model = load_model(model_name=model_path)
         
         self.model.value = loaded_model
 
-        self.done = True
-
-
-'''
-This component ensembles a given estimator. The output of this function is a score grid with CV scores by fold.
-'''
 @xai_component(color='gold')
 class EnsembleModelClassification(Component):
-    in_model:InArg[any] #Trained model object
-    method:InArg[str] #Method for ensembling base estimator. It can be ‘Bagging’ or ‘Boosting’.
-    choose_better:InArg[bool] #When set to True, the returned object is always better performing. The metric used for comparison is defined by the optimize parameter.
-    optimize:InArg[str] #Metric to compare for model selection when choose_better is True.
-    n_estimators:InArg[int] #The number of base estimators in the ensemble. In case of perfect fit, the learning procedure is stopped early.
+    """
+    Ensembles a given estimator. The output of this function is a score grid with CV scores by fold.
 
-    out_ensemble_model:OutArg[any] #Trained model object
+    ##### inPorts:
+    - in_model (any): Trained model object.
+    - method (str): Method for ensembling base estimator. It can be ‘Bagging’ or ‘Boosting’.
+    - choose_better (bool): When set to True, the returned object is always better performing. The metric used for comparison is defined by the optimize parameter.
+    - optimize (str): Metric to compare for model selection when choose_better is True.
+    - n_estimators (int): The number of base estimators in the ensemble. In case of perfect fit, the learning procedure is stopped early.
+    
+    ##### outPorts:
+    - out_ensemble_model (any): Trained model object.
+    """
+    in_model: InArg[any]
+    method: InArg[str]
+    choose_better: InArg[bool]
+    optimize: InArg[str]
+    n_estimators: InArg[int]
+    out_ensemble_model: OutArg[any]
 
     def __init__(self):
+        super().__init__()
+        self.method.value = 'Bagging'
+        self.choose_better.value = False
+        self.optimize.value = 'Accuracy'
+        self.n_estimators.value = 10
 
-        self.done = False
-        self.in_model = InArg(None)
-        self.method = InArg('Bagging')
-        self.choose_better = InArg(False)
-        self.optimize = InArg('Accuracy')
-        self.n_estimators = InArg(10)
-
-        self.out_ensemble_model= OutArg(None)
-        
     def execute(self, ctx) -> None:
+        from pycaret.classification import ensemble_model
 
-        from pycaret.classification import ensemble_model 
-    
         in_model = self.in_model.value
         method = self.method.value
         choose_better = self.choose_better.value
@@ -443,47 +415,46 @@ class EnsembleModelClassification(Component):
         n_estimators = self.n_estimators.value
 
         with capture.capture_output() as captured:
-            ensembled_model = ensemble_model(estimator=in_model,method=method,choose_better = choose_better, optimize=optimize,n_estimators=n_estimators)
+            ensembled_model = ensemble_model(estimator=in_model, method=method, choose_better=choose_better, optimize=optimize, n_estimators=n_estimators)
         captured.show()
-        print('Ensemble model:',ensembled_model)
+        print('Ensemble model:', ensembled_model)
 
         self.out_ensemble_model.value = ensembled_model
 
-        self.done = True
-
-'''
-This component trains a Soft Voting / Majority Rule classifier for select models passed in the top_model list. 
-'''
 @xai_component(color='greenyellow')
 class BlendModelsClassification(Component):
-    top_models:InArg[any] #List of trained model objects from CompareModel component
-    model_1:InArg[any] # first model to blend 
-    model_2:InArg[any] # second model to blend 
-    model_3:InArg[any] # third model to blend 
-    method:InArg[str] #‘hard’ uses predicted class labels for majority rule voting. ‘soft’, predicts the class label based on the argmax of the sums of the predicted probabilities, which is recommended for an ensemble of well-calibrated classifiers. Default value, ‘auto’, will try to use ‘soft’ and fall back to ‘hard’ if the former is not supported.
-    choose_better:InArg[bool] # When set to True, the returned object is always better performing. The metric used for comparison is defined by the optimize parameter.
-    optimize:InArg[str] #Metric to compare for model selection when choose_better is True.
-    
+    """
+    Trains a Soft Voting / Majority Rule classifier for select models passed in the top_model list.
 
-    out_blended_model:OutArg[any]
+    ##### inPorts:
+    - top_models (any): List of trained model objects from CompareModel component.
+    - model_1 (any): First model to blend.
+    - model_2 (any): Second model to blend.
+    - model_3 (any): Third model to blend.
+    - method (str): ‘hard’ uses predicted class labels for majority rule voting. ‘soft’, predicts the class label based on the argmax of the sums of the predicted probabilities, which is recommended for an ensemble of well-calibrated classifiers. Default value, ‘auto’, will try to use ‘soft’ and fall back to ‘hard’ if the former is not supported.
+    - choose_better (bool): When set to True, the returned object is always better performing. The metric used for comparison is defined by the optimize parameter.
+    - optimize (str): Metric to compare for model selection when choose_better is True.
+    
+    ##### outPorts:
+    - out_blended_model (any): Blended model object.
+    """
+    top_models: InArg[any]
+    model_1: InArg[any]
+    model_2: InArg[any]
+    model_3: InArg[any]
+    method: InArg[str]
+    choose_better: InArg[bool]
+    optimize: InArg[str]
+    out_blended_model: OutArg[any]
 
     def __init__(self):
+        super().__init__()
+        self.method.value = 'auto'
+        self.choose_better.value = False
+        self.optimize.value = 'Accuracy'
 
-        self.done = False
-        self.top_models = InArg(None)
-        self.model_1 = InArg(None)
-        self.model_2 = InArg(None)
-        self.model_3 = InArg(None)
-        self.method = InArg('auto')
-        self.choose_better = InArg(False)
-        self.optimize = InArg('Accuracy')
-        
-
-        self.out_blended_model= OutArg(None)
-        
     def execute(self, ctx) -> None:
-
-        from pycaret.classification import blend_models 
+        from pycaret.classification import blend_models
 
         model_list = self.top_models.value
         model_1 = self.model_1.value
@@ -494,52 +465,52 @@ class BlendModelsClassification(Component):
         optimize = self.optimize.value
         
         if model_list is None:
-            blend_model = [model_1,model_2,model_3]
+            blend_model = [model_1, model_2, model_3]
             model_list = [i for i in blend_model if i]
 
         with capture.capture_output() as captured:
-            blend_model = blend_models(estimator_list = model_list, method = method,choose_better = choose_better,optimize = optimize)
+            blend_model = blend_models(estimator_list=model_list, method=method, choose_better=choose_better, optimize=optimize)
         captured.show()
 
         self.out_blended_model.value = blend_model
 
-        self.done = True
-
-
-'''
-This component trains a meta model over select estimators passed in the estimator_list parameter.
- The output of this function is a score grid with CV scores by fold
-'''
 @xai_component(color='lawngreen')
 class StackModelsClassification(Component):
-    top_models:InArg[any] #List of trained model objects from CompareModel component
-    model_1:InArg[any] # first model to stack
-    model_2:InArg[any] # second model to stack
-    model_3:InArg[any] # third model to stack
-    meta_model:InArg[any] #When None, Logistic Regression is trained as a meta model.
-    method:InArg[str] #When set to ‘auto’, it will invoke, for each estimator, ‘predict_proba’, ‘decision_function’ or ‘predict’ in that order. 
-    choose_better:InArg[bool] #When set to True, the returned object is always better performing. The metric used for comparison is defined by the optimize parameter.
-    optimize:InArg[str] #Metric to compare for model selection when choose_better is True.
+    """
+    Trains a meta model over select estimators passed in the estimator_list parameter.
+    The output of this function is a score grid with CV scores by fold.
+
+    ##### inPorts:
+    - top_models (any): List of trained model objects from CompareModel component.
+    - model_1 (any): First model to stack.
+    - model_2 (any): Second model to stack.
+    - model_3 (any): Third model to stack.
+    - meta_model (any): When None, Logistic Regression is trained as a meta model.
+    - method (str): When set to ‘auto’, it will invoke, for each estimator, ‘predict_proba’, ‘decision_function’ or ‘predict’ in that order.
+    - choose_better (bool): When set to True, the returned object is always better performing. The metric used for comparison is defined by the optimize parameter.
+    - optimize (str): Metric to compare for model selection when choose_better is True.
     
-    out_stacked_model:OutArg[any] #Trained Model object
+    ##### outPorts:
+    - out_stacked_model (any): Trained model object.
+    """
+    top_models: InArg[any]
+    model_1: InArg[any]
+    model_2: InArg[any]
+    model_3: InArg[any]
+    meta_model: InArg[any]
+    method: InArg[str]
+    choose_better: InArg[bool]
+    optimize: InArg[str]
+    out_stacked_model: OutArg[any]
 
     def __init__(self):
+        super().__init__()
+        self.method.value = 'auto'
+        self.choose_better.value = False
+        self.optimize.value = 'Accuracy'
 
-        self.done = False
-        self.top_models = InArg(None)
-        self.model_1 = InArg(None)
-        self.model_2 = InArg(None)
-        self.model_3 = InArg(None)
-        self.meta_model = InArg(None)
-        self.method = InArg('auto')
-        self.choose_better = InArg(False)
-        self.optimize = InArg('Accuracy')
-        
-        self.out_stacked_model= OutArg(None)
-        
     def execute(self, ctx) -> None:
-
-        from pycaret.classification import stack_models 
+        from pycaret.classification import stack_models
 
         model_list = self.top_models.value
         model_1 = self.model_1.value
@@ -551,84 +522,78 @@ class StackModelsClassification(Component):
         optimize = self.optimize.value
         
         if model_list is None:
-            blend_model = [model_1,model_2,model_3]
+            blend_model = [model_1, model_2, model_3]
             model_list = [i for i in blend_model if i]
 
         with capture.capture_output() as captured:
-            stacked_model = stack_models(estimator_list = model_list,meta_model=meta_model,method = method,choose_better = choose_better,optimize = optimize)
+            stacked_model = stack_models(estimator_list=model_list, meta_model=meta_model, method=method, choose_better=choose_better, optimize=optimize)
         captured.show()
         
-        print('Stacked models:',stacked_model.estimators_)
+        print('Stacked models:', stacked_model.estimators_)
 
         self.out_stacked_model.value = stacked_model
 
-        self.done = True
-
-
-'''
-This component calibrates the probability of a given estimator using isotonic or logistic regression.
- The output of this function is a score grid with CV scores by fold. 
-'''
 @xai_component(color='steelblue')
 class CalibrateModelClassification(Component):
-    in_model:InArg[any] #Trained model object
-    method:InArg[str] #The method to use for calibration. Can be ‘sigmoid’ which corresponds to Platt’s method or ‘isotonic’ which is a non-parametric approach.
-    calibrate_fold:InArg[int] #Controls internal cross-validation. Can be an integer or a scikit-learn CV generator.
+    """
+    Calibrates the probability of a given estimator using isotonic or logistic regression.
+    The output of this function is a score grid with CV scores by fold.
 
-    out_calibrate_model:OutArg[any] ##Trained model object
+    ##### inPorts:
+    - in_model (any): Trained model object.
+    - method (str): The method to use for calibration. Can be ‘sigmoid’ which corresponds to Platt’s method or ‘isotonic’ which is a non-parametric approach.
+    - calibrate_fold (int): Controls internal cross-validation. Can be an integer or a scikit-learn CV generator.
+    
+    ##### outPorts:
+    - out_calibrate_model (any): Calibrated model object.
+    """
+    in_model: InArg[any]
+    method: InArg[str]
+    calibrate_fold: InArg[int]
+    out_calibrate_model: OutArg[any]
 
     def __init__(self):
-
-        self.done = False
-        self.in_model = InArg(None)
-        self.method = InArg('sigmoid')
-        self.calibrate_fold = InArg(5)
-
-        self.out_calibrate_model = InArg(None)
+        super().__init__()
+        self.method.value = 'sigmoid'
+        self.calibrate_fold.value = 5
 
     def execute(self, ctx) -> None:
+        from pycaret.classification import calibrate_model
 
-        from pycaret.classification import calibrate_model 
-    
-        in_model= self.in_model.value
+        in_model = self.in_model.value
         method = self.method.value
         calibrate_fold = self.calibrate_fold.value
 
         with capture.capture_output() as captured:
-            calibrated_model = calibrate_model(estimator=in_model,method = method,calibrate_fold = calibrate_fold)  
+            calibrated_model = calibrate_model(estimator=in_model, method=method, calibrate_fold=calibrate_fold)
         captured.show()
-        
 
         self.out_calibrate_model.value = calibrated_model
-        
-        self.done = True
 
-
-'''
-This component returns the best model out of all trained models in current session based on the optimize parameter. 
-Metrics evaluated can be accessed using the get_metrics function.
-'''
 @xai_component
 class AutoMLClassification(Component):
-    optimize:InArg[str] #Metric to use for model selection. It also accepts custom metrics added using the add_metric function.
+    """
+    Returns the best model out of all trained models in the current session based on the optimize parameter.
+    Metrics evaluated can be accessed using the get_metrics function.
 
-    best_model:OutArg[any] # best Trained Model object
+    ##### inPorts:
+    - optimize (str): Metric to use for model selection. It also accepts custom metrics added using the add_metric function.
+    
+    ##### outPorts:
+    - best_model (any): Best trained model object.
+    """
+    optimize: InArg[str]
+    best_model: OutArg[any]
 
     def __init__(self):
+        super().__init__()
+        self.optimize.value = 'Accuracy'
 
-        self.done = False
-        self.optimize = InArg('Accuracy')
-
-        self.best_model= OutArg(None)
-        
     def execute(self, ctx) -> None:
+        from pycaret.classification import automl
 
-        from pycaret.classification import automl 
-    
         optimize = self.optimize.value
 
         best_model = automl(optimize=optimize)
-        
-        self.best_model.value = best_model
 
-        self.done = True
+        self.best_model.value = best_model
