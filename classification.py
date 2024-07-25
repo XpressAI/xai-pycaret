@@ -52,39 +52,26 @@ class SetupClassification(Component):
     def execute(self, ctx) -> None:
         from pycaret.classification import setup, models
 
-        in_dataset = self.in_dataset.value
-        target = self.target.value
-        train_size_fraction = self.train_size_fraction.value
-        normalize = self.normalize.value
-        transformation = self.transformation.value
-        remove_multicollinearity = self.remove_multicollinearity.value
-        multicollinearity_threshold = self.multicollinearity_threshold.value
-        bin_numeric_features = self.bin_numeric_features.value
-        group_features = self.group_features.value
-        ignore_features = self.ignore_features.value
-        seed = self.seed.value
-        log_experiment = self.log_experiment.value
-        experiment_name = self.experiment_name.value
-        use_gpu = self.use_gpu.value
-
-        if seed is None:
+        if self.seed.value is None:
             print("Set the seed value for reproducibility.")
             
         with capture.capture_output() as captured:
-            setup_pycaret = setup(data=in_dataset,
-                                  target=target,
-                                  train_size=train_size_fraction,
-                                  normalize=normalize,
-                                  transformation=transformation,
-                                  remove_multicollinearity=remove_multicollinearity,
-                                  multicollinearity_threshold=multicollinearity_threshold,
-                                  bin_numeric_features=bin_numeric_features,
-                                  group_features=group_features,
-                                  ignore_features=ignore_features,
-                                  session_id=seed,
-                                  log_experiment=log_experiment,
-                                  experiment_name=experiment_name,
-                                  use_gpu=use_gpu)
+            setup_pycaret = setup(
+                data=self.in_dataset.value,
+                target=self.target.value,
+                train_size=self.train_size_fraction.value,
+                normalize=self.normalize.value,
+                transformation=self.transformation.value,
+                remove_multicollinearity=self.remove_multicollinearity.value,
+                multicollinearity_threshold=self.multicollinearity_threshold.value,
+                bin_numeric_features=self.bin_numeric_features.value,
+                group_features=self.group_features.value,
+                ignore_features=self.ignore_features.value,
+                session_id=self.seed.value,
+                log_experiment=self.log_experiment.value,
+                experiment_name=self.experiment_name.value,
+                use_gpu=self.use_gpu.value
+            )
 
         captured.show()
 
@@ -118,14 +105,14 @@ class CompareModelsClassification(Component):
     def execute(self, ctx) -> None:
         from pycaret.classification import compare_models
 
-        sort_by = self.sort_by.value
-        exclude = self.exclude.value
-        num_top = self.num_top.value
-
         with capture.capture_output() as captured:
-            best_model = compare_models(sort=sort_by, exclude=exclude, n_select=num_top)
+            best_model = compare_models(
+                sort=self.sort_by.value,
+                exclude=self.exclude.value,
+                n_select=self.num_top.value
+            )
         captured.show()
-        print('Best ' + str(num_top) + ' Model:', best_model)
+        print('Best ' + str(self.num_top.value) + ' Model:', best_model)
 
         self.top_models.value = best_model
 
@@ -154,11 +141,11 @@ class CreateModelClassification(Component):
     def execute(self, ctx) -> None:
         from pycaret.classification import create_model
 
-        model_id = self.model_id.value
-        num_fold = self.num_fold.value
-
         with capture.capture_output() as captured:
-            created_model = create_model(estimator=model_id, fold=num_fold)
+            created_model = create_model(
+                estimator=self.model_id.value,
+                fold=self.num_fold.value
+            )
         captured.show()
         print(created_model)
 
@@ -199,27 +186,18 @@ class TuneModelClassification(Component):
         from pycaret.classification import tune_model
         from IPython.display import display
 
-        in_model = self.in_model.value
-        optimize = self.optimize.value
-        patience = self.early_stopping_patience.value
-        num_fold = self.num_fold.value
-        n_iter = self.n_iter.value
-        custom_grid = self.custom_grid.value
-
-        if patience is None:
-            early_stopping = False
-            patience = 10
-        else:
-            early_stopping = True
+        early_stopping = self.early_stopping_patience.value is not None
 
         with capture.capture_output() as captured:
-            tuned_model = tune_model(estimator=in_model,
-                                     optimize=optimize,
-                                     fold=num_fold,
-                                     n_iter=n_iter,
-                                     early_stopping=early_stopping,
-                                     early_stopping_max_iters=patience,
-                                     custom_grid=custom_grid)
+            tuned_model = tune_model(
+                estimator=self.in_model.value,
+                optimize=self.optimize.value,
+                fold=self.num_fold.value,
+                n_iter=self.n_iter.value,
+                early_stopping=early_stopping,
+                early_stopping_max_iters=self.early_stopping_patience.value if early_stopping else 10,
+                custom_grid=self.custom_grid.value
+            )
         
         for o in captured.outputs:
             display(o)
@@ -261,20 +239,16 @@ class PlotModelClassification(Component):
             'parameter': 'Model Hyperparameter', 'lift': 'Lift Curve', 'gain': 'Gain Chart', 'tree': 'Decision Tree', 'ks': 'KS Statistic Plot'
         }
 
-        in_model = self.in_model.value
-        plot_type = self.plot_type.value
-        list_available_plots = self.list_available_plots.value
-
         with capture.capture_output() as captured:
-            plot_model(in_model, plot=plot_type)
+            plot_model(self.in_model.value, plot=self.plot_type.value)
         captured.show()
 
-        if list_available_plots:
+        if self.list_available_plots.value:
             print('List of available plots (plot Type - Plot Name):')
             for key, value in plot.items():
                 print(key, ' - ', value)
 
-        self.out_model.value = in_model
+        self.out_model.value = self.in_model.value
 
 @xai_component(color='crimson')
 class FinalizeModelClassification(Component):
@@ -293,10 +267,8 @@ class FinalizeModelClassification(Component):
     def execute(self, ctx) -> None:
         from pycaret.classification import finalize_model
 
-        in_model = self.in_model.value
-
         with capture.capture_output() as captured:
-            out_finalize_model = finalize_model(in_model)
+            out_finalize_model = finalize_model(self.in_model.value)
             print(out_finalize_model)
         captured.show()
 
@@ -322,11 +294,8 @@ class PredictModelClassification(Component):
     def execute(self, ctx) -> None:
         from pycaret.classification import predict_model
 
-        in_model = self.in_model.value
-        predict_dataset = self.predict_dataset.value
-
         with capture.capture_output() as captured:
-            prediction = predict_model(in_model, data=predict_dataset)
+            prediction = predict_model(self.in_model.value, data=self.predict_dataset.value)
         captured.show()
 
         self.out_model.value = prediction
@@ -348,11 +317,7 @@ class SaveModelClassification(Component):
     def execute(self, ctx) -> None:
         from pycaret.classification import save_model
 
-        in_model = self.in_model.value
-        save_path = self.save_path.value
-        model_only = self.model_only.value
-
-        save_model(in_model, model_name=save_path, model_only=model_only)
+        save_model(self.in_model.value, model_name=self.save_path.value, model_only=self.model_only.value)
 
 @xai_component(color='red')
 class LoadModelClassification(Component):
@@ -371,10 +336,7 @@ class LoadModelClassification(Component):
     def execute(self, ctx) -> None:
         from pycaret.classification import load_model
 
-        model_path = self.model_path.value
-        loaded_model = load_model(model_name=model_path)
-        
-        self.model.value = loaded_model
+        self.model.value = load_model(model_name=self.model_path.value)
 
 @xai_component(color='gold')
 class EnsembleModelClassification(Component):
@@ -408,14 +370,14 @@ class EnsembleModelClassification(Component):
     def execute(self, ctx) -> None:
         from pycaret.classification import ensemble_model
 
-        in_model = self.in_model.value
-        method = self.method.value
-        choose_better = self.choose_better.value
-        optimize = self.optimize.value
-        n_estimators = self.n_estimators.value
-
         with capture.capture_output() as captured:
-            ensembled_model = ensemble_model(estimator=in_model, method=method, choose_better=choose_better, optimize=optimize, n_estimators=n_estimators)
+            ensembled_model = ensemble_model(
+                estimator=self.in_model.value,
+                method=self.method.value,
+                choose_better=self.choose_better.value,
+                optimize=self.optimize.value,
+                n_estimators=self.n_estimators.value
+            )
         captured.show()
         print('Ensemble model:', ensembled_model)
 
@@ -526,7 +488,13 @@ class StackModelsClassification(Component):
             model_list = [i for i in blend_model if i]
 
         with capture.capture_output() as captured:
-            stacked_model = stack_models(estimator_list=model_list, meta_model=meta_model, method=method, choose_better=choose_better, optimize=optimize)
+            stacked_model = stack_models(
+                estimator_list=model_list,
+                meta_model=meta_model,
+                method=method,
+                choose_better=choose_better,
+                optimize=optimize
+            )
         captured.show()
         
         print('Stacked models:', stacked_model.estimators_)
@@ -560,12 +528,12 @@ class CalibrateModelClassification(Component):
     def execute(self, ctx) -> None:
         from pycaret.classification import calibrate_model
 
-        in_model = self.in_model.value
-        method = self.method.value
-        calibrate_fold = self.calibrate_fold.value
-
         with capture.capture_output() as captured:
-            calibrated_model = calibrate_model(estimator=in_model, method=method, calibrate_fold=calibrate_fold)
+            calibrated_model = calibrate_model(
+                estimator=self.in_model.value,
+                method=self.method.value,
+                calibrate_fold=self.calibrate_fold.value
+            )
         captured.show()
 
         self.out_calibrate_model.value = calibrated_model
@@ -592,8 +560,4 @@ class AutoMLClassification(Component):
     def execute(self, ctx) -> None:
         from pycaret.classification import automl
 
-        optimize = self.optimize.value
-
-        best_model = automl(optimize=optimize)
-
-        self.best_model.value = best_model
+        self.best_model.value = automl(optimize=self.optimize.value)
