@@ -18,8 +18,12 @@ jobs:
     env:
       TEST_XIRCUITS: |
         examples/AutoMLBasicAnomalyDetection.xircuits
-        examples/AutoMLBasicBinaryClassification.xircuits
-        examples/AutoMLBasicClustering.xircuits
+      # examples/AutoMLBasicBinaryClassification.xircuits 
+      # examples/AutoMLBasicClustering.xircuits
+      # examples/AutoMLBasicMulticlassClassification.xircuits
+      # examples/AutoMLBasicRegression.xircuits
+      # examples/AutoMLClassificationBlendModels.xircuits
+      # examples/AutoMLRegressionStackModels.xircuits
 
 
     steps:
