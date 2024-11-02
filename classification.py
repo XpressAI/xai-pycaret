@@ -51,10 +51,25 @@ class SetupClassification(Component):
 
     def execute(self, ctx) -> None:
         from pycaret.classification import setup, models
-
+        import warnings
+        
+        # Validate and reformat group_features if necessary
+        if isinstance(self.group_features.value, dict):
+            for key, group in self.group_features.value.items():
+                # Flatten lists within group values if needed
+                if isinstance(group, list):
+                    # Ensure all items in the group list are strings
+                    self.group_features.value[key] = [str(g) for g in group]
+                else:
+                    warnings.warn(f"Invalid format in group '{key}'; setting it to an empty list.")
+                    self.group_features.value[key] = []
+        else:
+            warnings.warn("`group_features` should be a dictionary with string keys and list values. Setting to None.")
+            self.group_features.value = None
+    
         if self.seed.value is None:
             print("Set the seed value for reproducibility.")
-            
+    
         with capture.capture_output() as captured:
             setup_pycaret = setup(
                 data=self.in_dataset.value,
@@ -70,11 +85,13 @@ class SetupClassification(Component):
                 session_id=self.seed.value,
                 log_experiment=self.log_experiment.value,
                 experiment_name=self.experiment_name.value,
-                use_gpu=self.use_gpu.value
+                use_gpu=self.use_gpu.value,             
+                n_jobs=1,                  
+                               
             )
-
+    
         captured.show()
-
+    
         print("List of the Available Classification Models: ")
         print(models())
 
@@ -266,6 +283,7 @@ class FinalizeModelClassification(Component):
 
     def execute(self, ctx) -> None:
         from pycaret.classification import finalize_model
+        print(self.in_model.value)
 
         with capture.capture_output() as captured:
             out_finalize_model = finalize_model(self.in_model.value)
@@ -289,6 +307,7 @@ class PredictModelClassification(Component):
     """
     in_model: InArg[any]
     predict_dataset: InArg[any]
+    prediction_results: OutArg[any]
     out_model: OutArg[any]
 
     def execute(self, ctx) -> None:
@@ -298,8 +317,9 @@ class PredictModelClassification(Component):
             prediction = predict_model(self.in_model.value, data=self.predict_dataset.value)
         captured.show()
 
-        self.out_model.value = prediction
-
+        self.prediction_results.value = prediction
+        self.out_model.value = self.in_model.value
+        
 @xai_component(color='red')
 class SaveModelClassification(Component):
     """
