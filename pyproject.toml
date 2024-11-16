@@ -8,6 +8,12 @@ readme = "README.md"
 repository = "https://github.com/XpressAI/xai-pycaret"
 keywords = ["xircuits", "pytorch", "data preprocessing", "classification"]
 
+dependencies = [
+    "Cython",
+    "pycaret==3.3.*",
+    "mlflow"
+]
+
 # Xircuits-specific configurations
 [tool.xircuits]
 default_example_path = "examples/AutoMLBasicAnomalyDetection.xircuits"
