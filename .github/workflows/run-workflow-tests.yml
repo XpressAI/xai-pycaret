@@ -2,7 +2,7 @@ name: Run Xircuits Workflows Test
 
 on:
   push:
-    branches: [ fahreza/v3-update ]   
+    branches: [ main ]   
   pull_request:
     branches: ["*"]                  
   workflow_dispatch:                 
