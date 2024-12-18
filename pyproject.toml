@@ -1,0 +1,20 @@
+[project]
+name = "xai-pycaret"
+version = "0.1.0"
+description = "Xircuits component library for PyTorch."
+authors = [{ name = "XpressAI", email = "eduardo@xpress.ai" }]
+license = "Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/XpressAI/xai-pycaret"
+keywords = ["xircuits", "pytorch", "data preprocessing", "classification"]
+
+dependencies = [
+    "Cython",
+    "pycaret==3.3.*",
+    "mlflow==2.17.2"
+]
+
+# Xircuits-specific configurations
+[tool.xircuits]
+default_example_path = "examples/AutoMLBasicAnomalyDetection.xircuits"
+requirements_path = "requirements.txt"
