@@ -1,12 +1,12 @@
 [project]
 name = "xai-pycaret"
 version = "0.1.0"
-description = "Xircuits component library for PyTorch."
+description = "Xircuits component library for PyCaret."
 authors = [{ name = "XpressAI", email = "eduardo@xpress.ai" }]
 license = "Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/XpressAI/xai-pycaret"
-keywords = ["xircuits", "pytorch", "data preprocessing", "classification"]
+keywords = ["xircuits", "pycaret", "data preprocessing", "classification"]
 
 dependencies = [
     "Cython",
